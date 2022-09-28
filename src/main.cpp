@@ -11,10 +11,11 @@
 #include<fmt/os.h>
 #include<fmt/ostream.h>
 #include<fmt/color.h>
-//导入私人第三方的头文件
+//导入自己写的头文件
 #include"utils.h"
 
 int main(){
     world_print();
+    midi_print();
     return 0;
 }

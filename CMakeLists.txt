@@ -35,6 +35,8 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Windows")
     # 默认windows下使用msvc
     add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+    # 增加编译宏，方便判断操作系统
+    add_definitions(-DWIN)
 ELSE()
 	MESSAGE(FATAL_ERROR "我们还没有适配目标平台，抱歉，请等待一段时间，非常感谢")
 ENDIF()
@@ -47,7 +49,8 @@ find_package(OpenCV REQUIRED)
 # 需要在vs的界面中手动更改或者手动指定msvc的参数，不能默认编译，那样出来的fmt为debug模式的，没有控制台输出
 find_package(fmt REQUIRED)
 # 如果找到了opencv就开始进行编译
-IF(OpenCV_FOUND)
+
+IF(OpenCV_FOUND AND fmt_FOUND)
     # 导入头文件
 	include_directories(${OpenCV_INCLUDE_DIRS})
     # 生成目标可执行文件
