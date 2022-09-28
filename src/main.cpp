@@ -7,7 +7,6 @@
 #include<opencv2/imgproc.hpp>
 //导入自己写的头文件
 #include"utils.h"
-#include"get_screen.h"
 
 void thread_print(){
     helloworld_print();
@@ -24,7 +23,7 @@ int main(){
     std::thread t2_s(thread_screen);
     t1_p.join();
     t2_s.join();
-    std::cout << "hello world!" << std::endl;
+    std::cout << "hello world" << std::endl;
     return 0;
 }
 

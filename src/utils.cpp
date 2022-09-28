@@ -7,7 +7,6 @@ void helloworld_print(){
 
 void midi_print(){
     //群青，但是midi输出
-    #define t1 444
     #ifdef WIN
         //从“double”转换到“DWORD”，可能丢失数据,手动规定int,实际上还是丢了（笑）但是他没有warning了
         double t2 = t1 * 0.75;

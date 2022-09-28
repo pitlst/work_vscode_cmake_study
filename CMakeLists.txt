@@ -9,7 +9,7 @@ ENDIF()
 # 设置项目名
 set(PROJECT_NAME cmake_study)
 # 在这里直接指定项目为c++项目，节约查找tool chain的时间
-project(${PROJECT_NAME} LANGUAGES CXX)
+project(${PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX)
 # 设置c++标准等级和编译后输出路径
 set(CMAKE_CXX_STANDARD 11)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build)
@@ -56,16 +56,24 @@ ENDIF()
 find_package(OpenCV REQUIRED)
 # 寻找QT
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
-# 如果找到了相关依赖就开始进行编译
-IF(OpenCV_FOUND AND QT_FOUND)
-    # 导入头文件
-	include_directories(${OpenCV_INCLUDE_DIRS})
-    # 生成目标可执行文件
-	add_executable(${PROJECT_NAME} ${DIR_SRCS} ${HEADERS})
-    # 链接动态库
-	target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBS} Qt5::Widgets)
-ENDIF()
+# 导入头文件
+include_directories(${OpenCV_INCLUDE_DIRS})
+# 生成目标可执行文件
+add_executable(${PROJECT_NAME} ${DIR_SRCS} ${HEADERS})
+# 链接动态库
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBS} winmm.lib Qt5::Widgets)
 
+
+# 根据不同的编译器指定警告级别和编译选项
+IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic)
+ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wweak-vtables -Wexit-time-destructors -Wglobal-constructors -Wmissing-noreturn )
+ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /w44265 /w44061 /w44062 )
+ENDIF()
 # >>>>>>>>测试部分>>>>>>>>
 enable_testing()
+# 仅运行生成文件
+add_test(NAME plain-run COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
 # <<<<<<<<测试部分结束<<<<<<<<
