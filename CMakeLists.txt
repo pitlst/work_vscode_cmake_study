@@ -3,7 +3,8 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 # 指定默认的编译等级
 IF(NOT DEFINED CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE "Release")
+    set(CMAKE_CONFIGURATION_TYPES "Release")    #这行用于解决msbuild的编译模式不能设置为release的问题
 ENDIF()
 # 设置项目名
 set(PROJECT_NAME cmake_study)
@@ -36,26 +37,21 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
     # 增加编译宏，方便判断操作系统
     add_definitions(-DWIN)
+    link_directories(C:\\Program Files \(x86\)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x64)
 ELSE()
 	MESSAGE(FATAL_ERROR "我们还没有适配目标平台，抱歉，请等待一段时间，非常感谢")
 ENDIF()
 
 # 寻找opencv
 find_package(OpenCV REQUIRED)
-# 寻找fmt输入输出库，其已经安装到系统中
-# 对于fmt的安装：如果使用c++20标准则不用安装，标准库实现了fmt的大部分功能
-# 如果使用c++11需要自行安装fmt，对于linux而言使用包管理系统即可，对于windows要么使用vcpkg，要么自行编译安装，编译时需要指定为release模式
-# 需要在vs的界面中手动更改或者手动指定msvc的参数，不能默认编译，那样出来的fmt为debug模式的，没有控制台输出
-find_package(fmt REQUIRED)
 # 如果找到了相关依赖就开始进行编译
-IF(OpenCV_FOUND AND fmt_FOUND)
+IF(OpenCV_FOUND)
     # 导入头文件
 	include_directories(${OpenCV_INCLUDE_DIRS})
     # 生成目标可执行文件
 	add_executable(${PROJECT_NAME} ${DIR_SRCS} ${HEADERS})
     # 链接动态库
-	target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
-    target_link_libraries(${PROJECT_NAME} fmt::fmt)#我也不知道为啥这么写
+	target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} winMM.Lib)
 ENDIF()
 
 # 根据不同的编译器指定警告级别和编译选项
@@ -65,12 +61,6 @@ ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
     target_compile_options(${PROJECT_NAME} PRIVATE -Wweak-vtables -Wexit-time-destructors -Wglobal-constructors -Wmissing-noreturn )
 ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /w44265 /w44061 /w44062 )
-    IF("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-
-    ELSEIF("${CMAKE_BUILD_TYPE}" MATCHES "Release")
-
-    ELSE()
-    ENDIF()
 ENDIF()
 
 
