@@ -1,4 +1,5 @@
 # 要求并设置cmake的最低版本，版本不符合要求不允许编译
+# cmake从3.1开始支持c++11
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
 # 设置项目名
@@ -40,6 +41,10 @@ ENDIF()
 
 # 寻找opencv
 find_package(OpenCV REQUIRED)
+# 寻找fmt输入输出库，其已经安装到系统中
+# 对于fmt的安装：如果使用c++20标准则不用安装，标准库实现了fmt的大部分功能
+# 如果使用c++11需要自行安装fmt，对于linux而言使用包管理系统即可，对于windows要么使用vcpkg，要么自行编译安装，编译时需要指定为release模式
+# 需要在vs的界面中手动更改或者手动指定msvc的参数，不能默认编译，那样出来的fmt为debug模式的，没有控制台输出
 find_package(fmt REQUIRED)
 # 如果找到了opencv就开始进行编译
 IF(OpenCV_FOUND)
