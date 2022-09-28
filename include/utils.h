@@ -10,8 +10,7 @@
 #ifdef WIN
     #include<Windows.h>
     #pragma comment(lib,"winmm.lib")
-    #define t1 444
+    void midi_print();
 #endif
 
-void world_print();
-void midi_print();
+void helloworld_print();

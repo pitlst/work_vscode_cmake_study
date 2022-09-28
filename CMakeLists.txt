@@ -1,7 +1,10 @@
 # 要求并设置cmake的最低版本，版本不符合要求不允许编译
 # cmake从3.1开始支持c++11
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-
+# 指定默认的编译等级
+IF(NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+ENDIF()
 # 设置项目名
 set(PROJECT_NAME cmake_study)
 # 在这里直接指定项目为c++项目，节约查找tool chain的时间
@@ -19,10 +22,6 @@ aux_source_directory(src DIR_SRCS)
 aux_source_directory(include HEADERS)
 # 指定头文件在include文件夹中寻找
 INCLUDE_DIRECTORIES(include)
-# 指定默认的编译等级
-IF(NOT DEFINED CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-ENDIF()
 # 判断操作系统平台,根据平台指定opencv安装路径
 MESSAGE(STATUS "目标平台是 ${CMAKE_SYSTEM}")
 MESSAGE(STATUS "编译等级是 ${CMAKE_BUILD_TYPE}")
@@ -48,8 +47,7 @@ find_package(OpenCV REQUIRED)
 # 如果使用c++11需要自行安装fmt，对于linux而言使用包管理系统即可，对于windows要么使用vcpkg，要么自行编译安装，编译时需要指定为release模式
 # 需要在vs的界面中手动更改或者手动指定msvc的参数，不能默认编译，那样出来的fmt为debug模式的，没有控制台输出
 find_package(fmt REQUIRED)
-# 如果找到了opencv就开始进行编译
-
+# 如果找到了相关依赖就开始进行编译
 IF(OpenCV_FOUND AND fmt_FOUND)
     # 导入头文件
 	include_directories(${OpenCV_INCLUDE_DIRS})
@@ -60,13 +58,19 @@ IF(OpenCV_FOUND AND fmt_FOUND)
     target_link_libraries(${PROJECT_NAME} fmt::fmt)#我也不知道为啥这么写
 ENDIF()
 
-# 根据不同的编译器指定警告级别
+# 根据不同的编译器指定警告级别和编译选项
 IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic)
 ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
     target_compile_options(${PROJECT_NAME} PRIVATE -Wweak-vtables -Wexit-time-destructors -Wglobal-constructors -Wmissing-noreturn )
 ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /w44265 /w44061 /w44062 )
+    IF("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
+
+    ELSEIF("${CMAKE_BUILD_TYPE}" MATCHES "Release")
+
+    ELSE()
+    ENDIF()
 ENDIF()
 
 
