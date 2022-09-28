@@ -8,7 +8,15 @@ void world_print(){
 }
 
 void midi_print(){
+    //群青，但是midi输出
     #ifdef WIN
+        //从“double”转换到“DWORD”，可能丢失数据,手动规定int,实际上还是丢了（笑）但是他没有warning了
+        double t2 = t1 * 0.75;
+        double t3 = t1 * 1.5;
+        double t4 = t1 * 2.5;
+        int t2_int = (int)t2;
+        int t3_int = (int)t3;
+        int t4_int = (int)t4;
         //如果在windows下才执行
         HMIDIOUT handle;
         midiOutOpen(&handle, 0, 0, 0, CALLBACK_NULL);
@@ -229,9 +237,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //17
         midiOutShortMsg(handle, 0x7F4A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4690);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4690);
         Sleep(t1 / 2);
         Sleep(t1 / 2);
@@ -243,9 +251,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //18
         midiOutShortMsg(handle, 0x7F4A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4690);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4690);
         Sleep(t1);
         midiOutShortMsg(handle, 0x7F4890);
@@ -284,9 +292,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //21
         midiOutShortMsg(handle, 0x7F4D90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4890);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4690);
         Sleep(t1);
         midiOutShortMsg(handle, 0x7F4890);
@@ -972,9 +980,9 @@ void midi_print(){
         Sleep(t1);
         //73
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3790);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F3E90);
@@ -986,9 +994,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //74
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3790);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F3E90);
@@ -1017,9 +1025,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //76
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3790);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F3E90);
@@ -1029,9 +1037,9 @@ void midi_print(){
         Sleep(t1);
         //77
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3790);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F3E90);
@@ -1043,9 +1051,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //78
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F3790);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F3E90);
@@ -1073,7 +1081,7 @@ void midi_print(){
         midiOutShortMsg(handle, 0x7F4590);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F4590);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         //80
         midiOutShortMsg(handle, 0x7F4690);
         Sleep(t1 / 2);
@@ -1287,7 +1295,7 @@ void midi_print(){
         Sleep(t1);
         //95
         midiOutShortMsg(handle, 0x7F4390);
-        Sleep(t1 * 1.5);
+        Sleep(t3_int);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F4390);
         Sleep(t1 / 2);
@@ -1608,14 +1616,14 @@ void midi_print(){
         Sleep(t1 / 2);
         //118
         midiOutShortMsg(handle, 0x7F3B90);
-        Sleep(t1 * 2.5);
+        Sleep(t4_int);
         Sleep(t1);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F4390);
         Sleep(t1 / 2);
         //119
         midiOutShortMsg(handle, 0x7F4190);
-        Sleep(t1 * 1.5);
+        Sleep(t3_int);
         Sleep(t1 / 2);
         Sleep(t1 / 2);
         midiOutShortMsg(handle, 0x7F4390);
@@ -1686,9 +1694,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //124
         midiOutShortMsg(handle, 0x7F4A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
         Sleep(t1 / 2);
         Sleep(t1 / 2);
@@ -1700,9 +1708,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //125
         midiOutShortMsg(handle, 0x7F4A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
         Sleep(t1);
         midiOutShortMsg(handle, 0x7F4890);
@@ -1741,9 +1749,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //128
         midiOutShortMsg(handle, 0x7F4D90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4890);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
         Sleep(t1 / 2);
         Sleep(t1 / 2);
@@ -1755,9 +1763,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //129
         midiOutShortMsg(handle, 0x7F4D90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4F90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4D90);
         Sleep(t1 / 2);
         Sleep(t1 / 2);
@@ -1798,9 +1806,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //132
         midiOutShortMsg(handle, 0x7F4A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
         Sleep(t1 / 2);
         Sleep(t1 / 2);
@@ -1812,9 +1820,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //133
         midiOutShortMsg(handle, 0x7F4A90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
         Sleep(t1);
         midiOutShortMsg(handle, 0x7F4890);
@@ -1853,9 +1861,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //136
         midiOutShortMsg(handle, 0x7F4D90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4890);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
         Sleep(t1 / 2);
         Sleep(t1 / 2);
@@ -1867,9 +1875,9 @@ void midi_print(){
         Sleep(t1 / 2);
         //137
         midiOutShortMsg(handle, 0x7F4D90);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4890);
-        Sleep(t1 * 0.75);
+        Sleep(t2_int);
         midiOutShortMsg(handle, 0x7F4790);
         Sleep(t1 / 2);
         Sleep(t1);
