@@ -74,6 +74,7 @@
         "complex": "cpp",
         "deque": "cpp",
         "queue": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "fstream": "cpp"
     }
 }
