@@ -58,7 +58,7 @@ int SaveBitmapToFile(HBITMAP hBitmap, LPSTR lpFileName)
     hDC = CreateDC("DISPLAY", NULL, NULL, NULL);
     iBits = GetDeviceCaps(hDC, BITSPIXEL) * GetDeviceCaps(hDC, PLANES);
     DeleteDC(hDC);
-
+    //内存对齐
     if (iBits <= 1)
         wBitCount = 1;
     else if (iBits <= 4)
