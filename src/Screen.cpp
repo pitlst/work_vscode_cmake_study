@@ -1,325 +1,146 @@
-#include "Screen.hpp"
-#include <QMutex>
-#include <QApplication>
-#include <QPainter>
-#include <QDesktopWidget>
-#include <QFileDialog>
-#include <QEvent>
-#include <QDateTime>
-#include <QStringList>
+#include "stdio.h"  
+#include "windows.h"
 
-#if (QT_VERSION > QT_VERSION_CHECK(5,0,0))
-#include <QScreen>
-#endif
-
-#define STRDATETIME qPrintable (QDateTime::currentDateTime().toString("yyyy-MM-dd-HH-mm-ss"))
-
-Screen::Screen(QSize size)
+/************************************************************************/
+/* hBitmap    为刚才的屏幕位图句柄
+/* lpFileName 为需要保存的位图文件名
+/************************************************************************/
+int SaveBitmapToFile(HBITMAP hBitmap, LPSTR lpFileName)
 {
-    maxWidth = size.width();
-    maxHeight = size.height();
+    HDC            hDC; //设备描述表
+    int            iBits;//当前显示分辨率下每个像素所占字节数
+    WORD           wBitCount;//位图中每个像素所占字节数    
+    DWORD          dwPaletteSize = 0;//定义调色板大小
+    DWORD          dwBmBitsSize;//位图中像素字节大小
+    DWORD          dwDIBSize;// 位图文件大小
+    DWORD          dwWritten;//写入文件字节数
+    BITMAP         Bitmap;//位图结构
+    BITMAPFILEHEADER   bmfHdr;   //位图属性结构   
+    BITMAPINFOHEADER   bi;       //位图文件头结构
+    LPBITMAPINFOHEADER lpbi;     //位图信息头结构     指向位图信息头结构
+    HANDLE          fh;//定义文件句柄
+    HANDLE            hDib;//分配内存句柄
+    HANDLE            hPal;//分配内存句柄
+    HANDLE          hOldPal = NULL;//调色板句柄         
 
-    startPos = QPoint(-1, -1);
-    endPos = startPos;
-    leftUpPos = startPos;
-    rightDownPos = startPos;
-    status = SELECT;
-}
+    //计算位图文件每个像素所占字节数 
 
-int Screen::width()
-{
-    return maxWidth;
-}
+    hDC = CreateDC("DISPLAY", NULL, NULL, NULL);
+    iBits = GetDeviceCaps(hDC, BITSPIXEL) * GetDeviceCaps(hDC, PLANES);
+    DeleteDC(hDC);
 
-int Screen::height()
-{
-    return maxHeight;
-}
+    if (iBits <= 1)
+        wBitCount = 1;
+    else if (iBits <= 4)
+        wBitCount = 4;
+    else if (iBits <= 8)
+        wBitCount = 8;
+    else if (iBits <= 24)
+        wBitCount = 24;
+    else if (iBits <= 32)
+        wBitCount = 24;
 
-Screen::STATUS Screen::getStatus()
-{
-    return status;
-}
 
-void Screen::setStatus(STATUS status)
-{
-    this->status = status;
-}
+    //计算调色板大小   
+    if (wBitCount <= 8)
+        dwPaletteSize = (1 << wBitCount) * sizeof(RGBQUAD);
 
-void Screen::setEnd(QPoint pos)
-{
-    endPos = pos;
-    leftUpPos = startPos;
-    rightDownPos = endPos;
-    cmpPoint(leftUpPos, rightDownPos);
-}
 
-void Screen::setStart(QPoint pos)
-{
-    startPos = pos;
-}
 
-QPoint Screen::getEnd()
-{
-    return endPos;
-}
+    //设置位图信息头结构   
+    GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = Bitmap.bmWidth;
+    bi.biHeight = Bitmap.bmHeight;
+    bi.biPlanes = 1;
+    bi.biBitCount = wBitCount;
+    bi.biCompression = BI_RGB;
+    bi.biSizeImage = 0;
+    bi.biXPelsPerMeter = 0;
+    bi.biYPelsPerMeter = 0;
+    bi.biClrUsed = 0;
+    bi.biClrImportant = 0;
+    dwBmBitsSize = ((Bitmap.bmWidth * wBitCount + 31) / 32) * 4 * Bitmap.bmHeight;
 
-QPoint Screen::getStart()
-{
-    return startPos;
-}
-
-QPoint Screen::getLeftUp()
-{
-    return leftUpPos;
-}
-
-QPoint Screen::getRightDown()
-{
-    return rightDownPos;
-}
-
-bool Screen::isInArea(QPoint pos)
-{
-    if (pos.x() > leftUpPos.x() && pos.x() < rightDownPos.x() && pos.y() > leftUpPos.y() && pos.y() < rightDownPos.y()) {
-        return true;
+    //为位图内容分配内存   
+    hDib = GlobalAlloc(GHND, dwBmBitsSize + dwPaletteSize + sizeof(BITMAPINFOHEADER));
+    lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDib);
+    if (lpbi == NULL)
+    {
+        return 0;
     }
 
-    return false;
+    *lpbi = bi;
+    // 处理调色板
+    hPal = GetStockObject(DEFAULT_PALETTE);
+    if (hPal)
+    {
+        hDC = GetDC(NULL);
+        hOldPal = ::SelectPalette(hDC, (HPALETTE)hPal, FALSE);
+        RealizePalette(hDC);
+    }
+    // 获取该调色板下新的像素值   
+    GetDIBits(hDC, hBitmap, 0, (UINT)Bitmap.bmHeight,
+        (LPSTR)lpbi + sizeof(BITMAPINFOHEADER) + dwPaletteSize,
+        (LPBITMAPINFO)lpbi, DIB_RGB_COLORS);
+    //恢复调色板      
+    if (hOldPal)
+    {
+        SelectPalette(hDC, (HPALETTE)hOldPal, TRUE);
+        RealizePalette(hDC);
+        ReleaseDC(NULL, hDC);
+    }
+    //创建位图文件       
+    fh = CreateFile(lpFileName, GENERIC_WRITE,
+        0, NULL, CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+
+    if (fh == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+    // 设置位图文件头   
+    bmfHdr.bfType = 0x4D42;  // "BM"   
+    dwDIBSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + dwPaletteSize + dwBmBitsSize;
+    bmfHdr.bfSize = dwDIBSize;
+    bmfHdr.bfReserved1 = 0;
+    bmfHdr.bfReserved2 = 0;
+    bmfHdr.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER) + dwPaletteSize;
+
+    // 写入位图文件头   
+    WriteFile(fh, (LPSTR)&bmfHdr, sizeof(BITMAPFILEHEADER), &dwWritten, NULL);
+
+    // 写入位图文件其余内容   
+    WriteFile(fh, (LPSTR)lpbi, dwDIBSize, &dwWritten, NULL);
+
+    //清除      
+    GlobalUnlock(hDib);
+    GlobalFree(hDib);
+    CloseHandle(fh);
+
+    return 1;
 }
 
-void Screen::move(QPoint p)
+HBITMAP   GetCaptureBmp()
 {
-    int lx = leftUpPos.x() + p.x();
-    int ly = leftUpPos.y() + p.y();
-    int rx = rightDownPos.x() + p.x();
-    int ry = rightDownPos.y() + p.y();
+    HDC     hDC;
+    HDC     MemDC;
+    BYTE* Data;
+    HBITMAP   hBmp;
+    BITMAPINFO   bi;
 
-    if (lx < 0) {
-        lx = 0;
-        rx -= p.x();
-    }
+    memset(&bi, 0, sizeof(bi));
+    bi.bmiHeader.biSize = sizeof(BITMAPINFO);
+    bi.bmiHeader.biWidth = GetSystemMetrics(SM_CXSCREEN);
+    bi.bmiHeader.biHeight = GetSystemMetrics(SM_CYSCREEN);
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 24;
 
-    if (ly < 0) {
-        ly = 0;
-        ry -= p.y();
-    }
-
-    if (rx > maxWidth)  {
-        rx = maxWidth;
-        lx -= p.x();
-    }
-
-    if (ry > maxHeight) {
-        ry = maxHeight;
-        ly -= p.y();
-    }
-
-    leftUpPos = QPoint(lx, ly);
-    rightDownPos = QPoint(rx, ry);
-    startPos = leftUpPos;
-    endPos = rightDownPos;
-}
-
-void Screen::cmpPoint(QPoint &leftTop, QPoint &rightDown)
-{
-    QPoint l = leftTop;
-    QPoint r = rightDown;
-
-    if (l.x() <= r.x()) {
-        if (l.y() <= r.y()) {
-            ;
-        } else {
-            leftTop.setY(r.y());
-            rightDown.setY(l.y());
-        }
-    } else {
-        if (l.y() < r.y()) {
-            leftTop.setX(r.x());
-            rightDown.setX(l.x());
-        } else {
-            QPoint tmp;
-            tmp = leftTop;
-            leftTop = rightDown;
-            rightDown = tmp;
-        }
-    }
-}
-
-QScopedPointer<ScreenWidget> ScreenWidget::self;
-ScreenWidget *ScreenWidget::Instance()
-{
-    if (self.isNull()) {
-        static QMutex mutex;
-        QMutexLocker locker(&mutex);
-        if (self.isNull()) {
-            self.reset(new ScreenWidget);
-        }
-    }
-
-    return self.data();
-}
-
-ScreenWidget::ScreenWidget(QWidget *parent) : QWidget(parent)
-{
-    //this->setWindowFlags(Qt::Tool | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::X11BypassWindowManagerHint);
-
-    menu = new QMenu(this);
-    menu->addAction("保存当前截图", this, SLOT(saveScreen()));
-    menu->addAction("保存全屏截图", this, SLOT(saveFullScreen()));
-    menu->addAction("截图另存为", this, SLOT(saveScreenOther()));
-    menu->addAction("全屏另存为", this, SLOT(saveFullOther()));
-    menu->addAction("退出截图", this, SLOT(hide()));
-
-    //取得屏幕大小
-    screen = new Screen(QApplication::desktop()->size());
-    //保存全屏图像
-    fullScreen = new QPixmap();
-}
-
-void ScreenWidget::paintEvent(QPaintEvent *)
-{
-    int x = screen->getLeftUp().x();
-    int y = screen->getLeftUp().y();
-    int w = screen->getRightDown().x() - x;
-    int h = screen->getRightDown().y() - y;
-
-    QPainter painter(this);
-
-    QPen pen;
-    pen.setColor(Qt::green);
-    pen.setWidth(2);
-    pen.setStyle(Qt::DotLine);
-    painter.setPen(pen);
-    painter.drawPixmap(0, 0, *bgScreen);
-
-    if (w != 0 && h != 0) {
-        painter.drawPixmap(x, y, fullScreen->copy(x, y, w, h));
-    }
-
-    painter.drawRect(x, y, w, h);
-
-    pen.setColor(Qt::yellow);
-    painter.setPen(pen);
-    painter.drawText(x + 2, y - 8, tr("截图范围：( %1 x %2 ) - ( %3 x %4 )  图片大小：( %5 x %6 )")
-                     .arg(x).arg(y).arg(x + w).arg(y + h).arg(w).arg(h));
-}
-
-void ScreenWidget::showEvent(QShowEvent *)
-{
-    QPoint point(-1, -1);
-    screen->setStart(point);
-    screen->setEnd(point);
-
-#if (QT_VERSION <= QT_VERSION_CHECK(5,0,0))
-    *fullScreen = fullScreen->grabWindow(QApplication::desktop()->winId(), 0, 0, screen->width(), screen->height());
-#else
-    QScreen *pscreen = QApplication::primaryScreen();
-    *fullScreen = pscreen->grabWindow(QApplication::desktop()->winId(), 0, 0, screen->width(), screen->height());
-#endif
-
-    //设置透明度实现模糊背景
-    QPixmap pix(screen->width(), screen->height());
-    pix.fill((QColor(160, 160, 160, 200)));
-    bgScreen = new QPixmap(*fullScreen);
-    QPainter p(bgScreen);
-    p.drawPixmap(0, 0, pix);
-}
-
-void ScreenWidget::saveScreen()
-{
-    int x = screen->getLeftUp().x();
-    int y = screen->getLeftUp().y();
-    int w = screen->getRightDown().x() - x;
-    int h = screen->getRightDown().y() - y;
-
-    QString fileName = QString("%1/screen_%2.png").arg(qApp->applicationDirPath()).arg(STRDATETIME);
-    fullScreen->copy(x, y, w, h).save(fileName, "png");
-    close();
-}
-
-void ScreenWidget::saveFullScreen()
-{
-    QString fileName = QString("%1/full_%2.png").arg(qApp->applicationDirPath()).arg(STRDATETIME);
-    fullScreen->save(fileName, "png");
-    close();
-}
-
-void ScreenWidget::saveScreenOther()
-{
-    QString name = QString("%1.png").arg(STRDATETIME);
-    QString fileName = QFileDialog::getSaveFileName(this, "保存图片", name, "png Files (*.png)");
-    if (!fileName.endsWith(".png")) {
-        fileName += ".png";
-    }
-
-    if (fileName.length() > 0) {
-        int x = screen->getLeftUp().x();
-        int y = screen->getLeftUp().y();
-        int w = screen->getRightDown().x() - x;
-        int h = screen->getRightDown().y() - y;
-        fullScreen->copy(x, y, w, h).save(fileName, "png");
-        close();
-    }
-}
-
-void ScreenWidget::saveFullOther()
-{
-    QString name = QString("%1.png").arg(STRDATETIME);
-    QString fileName = QFileDialog::getSaveFileName(this, "保存图片", name, "png Files (*.png)");
-    if (!fileName.endsWith(".png")) {
-        fileName += ".png";
-    }
-
-    if (fileName.length() > 0) {
-        fullScreen->save(fileName, "png");
-        close();
-    }
-}
-
-void ScreenWidget::mouseMoveEvent(QMouseEvent *e)
-{
-    if (screen->getStatus() == Screen::SELECT) {
-        screen->setEnd(e->pos());
-    } else if (screen->getStatus() == Screen::MOV) {
-        QPoint p(e->x() - movPos.x(), e->y() - movPos.y());
-        screen->move(p);
-        movPos = e->pos();
-    }
-
-    this->update();
-}
-
-void ScreenWidget::mousePressEvent(QMouseEvent *e)
-{
-    int status = screen->getStatus();
-
-    if (status == Screen::SELECT) {
-        screen->setStart(e->pos());
-    } else if (status == Screen::MOV) {
-        if (screen->isInArea(e->pos()) == false) {
-            screen->setStart(e->pos());
-            screen->setStatus(Screen::SELECT);
-        } else {
-            movPos = e->pos();
-            this->setCursor(Qt::SizeAllCursor);
-        }
-    }
-
-    this->update();
-}
-
-void ScreenWidget::mouseReleaseEvent(QMouseEvent *)
-{
-    if (screen->getStatus() == Screen::SELECT) {
-        screen->setStatus(Screen::MOV);
-    } else if (screen->getStatus() == Screen::MOV) {
-        this->setCursor(Qt::ArrowCursor);
-    }
-}
-
-void ScreenWidget::contextMenuEvent(QContextMenuEvent *)
-{
-    this->setCursor(Qt::ArrowCursor);
-    menu->exec(cursor().pos());
+    hDC = GetDC(NULL);
+    MemDC = CreateCompatibleDC(hDC);
+    hBmp = CreateDIBSection(MemDC, &bi, DIB_RGB_COLORS, (void**)&Data, NULL, 0);
+    SelectObject(MemDC, hBmp);
+    BitBlt(MemDC, 0, 0, bi.bmiHeader.biWidth, bi.bmiHeader.biHeight, hDC, 0, 0, SRCCOPY);
+    ReleaseDC(NULL, hDC);
+    DeleteDC(MemDC);
+    return   hBmp;
 }

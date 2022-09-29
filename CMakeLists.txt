@@ -2,10 +2,10 @@
 # 我电脑上的qt需要至少3.16的cmake
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 # 指定默认的编译等级
-IF(NOT DEFINED CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release")
-    set(CMAKE_CONFIGURATION_TYPES "Release")    #这行用于解决msbuild的编译模式不能设置为release的问题
-ENDIF()
+# IF(NOT DEFINED CMAKE_BUILD_TYPE)
+#     set(CMAKE_BUILD_TYPE "Release")
+#     set(CMAKE_CONFIGURATION_TYPES "Release")    #这行用于解决msbuild的编译模式不能设置为release的问题
+# ENDIF()
 # 设置项目名
 set(PROJECT_NAME cmake_study)
 # 在这里直接指定项目为c++项目，节约查找tool chain的时间
@@ -16,9 +16,6 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build)
 # 强制化c++标准，当标准不符合要求时强制终止编译而不是采用更旧的标准
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-# 有些项目会动态生成头文件，项目中需要引入它，因此需要将output目录也include进来
-# 等同于INCLUDE_DIRECTORY(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # 搜索src下文件存入DIR_SRCS变量
 aux_source_directory(src DIR_SRCS)
 # 搜索include下头文件存入HEADERS变量
@@ -33,14 +30,6 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Windows")
     # 注意，这里的OpenCVConfig.cmake应当是指向二进制文件的
     MESSAGE(STATUS "设置opencv安装路径为:  D:/opencv/build/x64/vc15/lib")
     set(OpenCV_DIR D:/opencv/build/x64/vc15/lib)
-    # 手动指定QT的安装路径
-    set(QT_DIR D:/QT)
-    # Qt特有的编译器需要打开，默认是关闭的
-    set(CMAKE_AUTOMOC ON) # Meta-Object Compiler
-    set(CMAKE_AUTORCC ON) # Resource Compiler
-    set(CMAKE_AUTOUIC ON) # User Interface Compiler
-    # qt生成的中间文件都会在build目录下，这样的话，编译器则不能定位由uic程序产生的诸如_ui_mainwindow.h等文件。所以，我们需要把build目录添加到包含目录中
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
     # 解决MSVC下的字符编码问题，使不带标签的utf-8编码的文件不发出代码页警告
     # 默认windows下使用msvc
     add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
@@ -54,14 +43,12 @@ ENDIF()
 
 # 寻找opencv
 find_package(OpenCV REQUIRED)
-# 寻找QT
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
 # 导入头文件
 include_directories(${OpenCV_INCLUDE_DIRS})
 # 生成目标可执行文件
 add_executable(${PROJECT_NAME} ${DIR_SRCS} ${HEADERS})
 # 链接动态库
-target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBS} winmm.lib Qt5::Widgets)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBS} winmm.lib)
 
 
 # 根据不同的编译器指定警告级别和编译选项
